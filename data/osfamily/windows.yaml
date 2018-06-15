@@ -1,0 +1,5 @@
+---
+vsts_agent::agent::package_src: 'https://vstsagentpackage.azureedge.net/agent/2.134.2/vsts-agent-win-x64-2.134.2.zip'
+vsts_agent::agent::package_sha512: '4229eeab3bc3edc37e11d785e48273ce595a72a8871431be6afd160a540e701684d8d24f25881f82172de2f1788b922a5072d3f1fa5d02e747637f685ddbd395'
+vsts_agent::agent::archive_name: 'agent.zip'
+vsts_agent::agent::config_script: 'config.cmd'
