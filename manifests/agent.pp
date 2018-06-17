@@ -133,9 +133,12 @@ define vsts_agent::agent (
         default => $proxy_proto,
     }
 
+    $dirtree = delete(dirtree($install_path),$install_path)
+    ensure_resource('file', $dirtree, {'ensure' => 'directory'})
+
     if $facts['os']['family'] == 'windows' {
         if $run_as_service and $windows_logon_account and !$windows_logon_password {
-            fail('windows_login_password needs to be specified')
+            fail('windows_logon_password needs to be specified')
         }
         # Requires PowerShell >= 4 (alternative to depending on 7z)
         archive {"${install_path}/${archive_name}":
@@ -167,8 +170,9 @@ define vsts_agent::agent (
 
     file {$install_path:
         ensure  => directory,
-        recurse => true,
         owner   => $service_user,
+        group   => $service_group,
+        mode    => '0750',
     }
 
     # The VSTS credential store is not supported due to security concerns
@@ -201,19 +205,19 @@ define vsts_agent::agent (
 
     $token_opts = $token ? {
         undef   => undef,
-        default => "--token ${token}",
+        default => "--token \"${token}\"",
     }
     $username_opts = $username ? {
         undef   => undef,
-        default => "--username ${username}"
+        default => "--username \"${username}\""
     }
     $password_opts = $password ? {
         undef   => undef,
-        default => "--password ${password}"
+        default => "--password \"${password}\""
     }
     $pool_opts = $pool ? {
         undef   => undef,
-        default => "--pool ${pool}"
+        default => "--pool \"${pool}\""
     }
     $replace_opts = $replace ? {
         true     => '--replace',
@@ -221,11 +225,11 @@ define vsts_agent::agent (
     }
     $agent_name_opts = $agent_name ? {
         undef   => undef,
-        default => "--agent ${agent_name}",
+        default => "--agent \"${agent_name}\"",
     }
     $work_opts = $work ? {
         undef   => undef,
-        default => "--work ${work}",
+        default => "--work \"${work}\"",
     }
     $accept_tee_eula_opts = $accept_tee_eula ? {
         true    => '--acceptTeeEula',
@@ -241,11 +245,11 @@ define vsts_agent::agent (
     }
     $windows_logon_account_opts = $windows_logon_account ? {
         undef   => undef,
-        default => "--windowsLogonAccount ${windows_logon_account}",
+        default => "--windowsLogonAccount \"${windows_logon_account}\"",
     }
     $windows_logon_password_opts = $windows_logon_password ? {
         undef   => undef,
-        default => "--windowsLogonPassword ${windows_logon_password}",
+        default => "--windowsLogonPassword \"${windows_logon_password}\"",
     }
     $overwrite_auto_logon_opts = $overwrite_auto_logon ? {
         true    => '--overwriteAutoLogon',
@@ -261,18 +265,18 @@ define vsts_agent::agent (
     }
     $project_name_opts = $project_name ? {
         undef   => undef,
-        default => "--projectName ${project_name}",
+        default => "--projectName \"${project_name}\"",
     }
     $deployment_group_name_opts = $deployment_group_name ? {
         undef   => undef,
-        default => "--deploymentGroupName ${deployment_group_name}",
+        default => "--deploymentGroupName \"${deployment_group_name}\"",
     }
     if $deployment_group_tags {
         $deployment_group_tags_joined = join($deployment_group_tags,',')
     }
     $deployment_group_tags_opts = $deployment_group_tags ? {
         undef   => undef,
-        default => "--addDeploymentGroupTags --deploymentGroupTags ${deployment_group_tags_joined}",
+        default => "--addDeploymentGroupTags --deploymentGroupTags \"${deployment_group_tags_joined}\"",
     }
 
     $opts = "${token_opts} ${username_opts} ${password_opts} ${pool_opts} ${replace_opts} ${agent_name_opts} ${work_opts} ${accept_tee_eula_opts} ${run_as_service_opts} ${run_as_auto_logon_opts} ${windows_logon_account_opts} ${windows_logon_password_opts} ${overwrite_auto_logon_opts} ${no_restart_opts} ${deployment_group_opts} ${project_name_opts} ${deployment_group_name_opts} ${deployment_group_tags_opts}"
@@ -289,7 +293,8 @@ define vsts_agent::agent (
         }
     }
     else {
-        exec {"${install_path}/${config_script} --unattended --url ${vsts_url} --auth ${auth_type} ${opts}":
+        exec {"${install_path}/${config_script}":
+            command => Sensitive.new("${install_path}/${config_script} --unattended --url ${vsts_url} --auth ${auth_type} ${opts}"),
             creates => "${install_path}/.credentials",
             user    => $service_user,
         }
