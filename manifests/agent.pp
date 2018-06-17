@@ -10,16 +10,18 @@
 #      run_as_service     => true,
 #  }
 #
+# @param install_path
+#   The installation path for the VSTS agent. 
+# @param service_user
+#   The user that will own the $install_path directory, and run the VSTS service if $run_as_service is true.
+# @param vsts_instance_name
+#   The name of the VSTS account.
 # @param agent_name
 #   Unique name to identify the VSTS agent
 # @param package_src 
 #   Source of the VSTS installation package. Supports all URIs supported by the archive module.
 # @param package_sha512
 #   SHA-512 hash of the VSTS installation package, for verification.
-# @param install_path
-#   The installation path for the VSTS agent. 
-# @param service_user
-#   The user that will own the $install_path directory, and run the VSTS service if $run_as_service is true.
 # @param service_group
 #   The group that will own the $install_path directory.
 # @param proxy_proto
@@ -34,8 +36,6 @@
 #   The password for a proxy, if needed.
 # @param proxy_bypass_hosts
 #   Hostname regexes to bypass proxy.
-# @param vsts_instance_name
-#   The name of the VSTS account.
 # @param vsts_url
 #   The URL for VSTS or TFS. If using VSTS, setting $vsts_instance_name is sufficient.
 # @param auth_type
@@ -81,11 +81,12 @@
 # @param manage_service
 #   If enabled and $run_as_service is true, ensure VSTS agent is running.
 define vsts_agent::agent (
+    Stdlib::Absolutepath $install_path,
+    String[1] $service_user,
+    String[1] $vsts_instance_name,
     String[1] $agent_name = $title,
     String[1] $package_src = lookup('vsts_agent::agent::package_src'),
     String[128,128] $package_sha512 = lookup('vsts_agent::agent::package_sha512'),
-    Stdlib::Absolutepath $install_path,
-    String[1] $service_user,
     Optional[String[1]] $service_group = undef,
     Optional[Enum['http','https']] $proxy_proto = undef,
     Optional[Stdlib::Host] $proxy_host = undef,
@@ -93,7 +94,6 @@ define vsts_agent::agent (
     Optional[String[1]] $proxy_user = undef,
     Optional[String[1]] $proxy_password = undef,
     Optional[Array[String[1]]] $proxy_bypass_hosts = undef,
-    String[1] $vsts_instance_name,
     Stdlib::HTTPUrl $vsts_url = "https://${vsts_instance_name}.visualstudio.com",
     Enum['pat', 'negotiate','alt','integrated'] $auth_type = 'pat',
     Optional[String[1]] $token = undef,
@@ -186,7 +186,7 @@ define vsts_agent::agent (
             ensure => absent,
         }
     }
-    
+
     if $proxy_bypass_hosts {
         file {"${install_path}/.proxybypass":
             ensure  => present,
