@@ -117,7 +117,7 @@ define vsts_agent::agent (
     String[1] $config_script = lookup('vsts_agent::agent::config_script'),
     Boolean $manage_service = $run_as_service,
 ) {
-    if $facts['kernel'] != 'Linux' and $facts['os']['family'] != 'windows' {
+    if $facts['kernel'] != 'Linux' and $facts['kernel'] != 'windows' {
         fail('Unsupported operating system')
     }
     if $deployment_group and !($deployment_group_name and $project_name){
@@ -136,7 +136,17 @@ define vsts_agent::agent (
     $dirtree = delete(dirtree($install_path),$install_path)
     ensure_resource('file', $dirtree, {'ensure' => 'directory'})
 
-    if $facts['os']['family'] == 'windows' {
+    $install_path_parent = $dirtree[-1]
+
+    file {$install_path:
+        ensure  => directory,
+        owner   => $service_user,
+        group   => $service_group,
+        mode    => '0750',
+        require => File[$install_path_parent],
+    }
+
+    if $facts['kernel'] == 'windows' {
         if $run_as_service and $windows_logon_account and !$windows_logon_password {
             fail('windows_logon_password needs to be specified')
         }
@@ -152,6 +162,7 @@ define vsts_agent::agent (
             proxy_server    => $proxy_server,
             user            => $service_user,
             group           => $service_group,
+            require         => File[$install_path],
         }
     }
     else {
@@ -165,14 +176,8 @@ define vsts_agent::agent (
             proxy_server => $proxy_server,
             user         => $service_user,
             group        => $service_group,
+            require      => File[$install_path],
         }
-    }
-
-    file {$install_path:
-        ensure  => directory,
-        owner   => $service_user,
-        group   => $service_group,
-        mode    => '0750',
     }
 
     # The VSTS credential store is not supported due to security concerns
@@ -183,6 +188,7 @@ define vsts_agent::agent (
         file {"${install_path}/.proxy":
             ensure  => present,
             content => "${proxy_proto}://${proxy_host}:${proxy_port}",
+            require => File[$install_path],
         }
     }
     else {
@@ -194,7 +200,8 @@ define vsts_agent::agent (
     if $proxy_bypass_hosts {
         file {"${install_path}/.proxybypass":
             ensure  => present,
-            content => join($proxy_bypass_hosts, "\n")
+            content => join($proxy_bypass_hosts, "\n"),
+            require => File[$install_path],
         }
     }
     else {
@@ -281,14 +288,17 @@ define vsts_agent::agent (
 
     $opts = "${token_opts} ${username_opts} ${password_opts} ${pool_opts} ${replace_opts} ${agent_name_opts} ${work_opts} ${accept_tee_eula_opts} ${run_as_service_opts} ${run_as_auto_logon_opts} ${windows_logon_account_opts} ${windows_logon_password_opts} ${overwrite_auto_logon_opts} ${no_restart_opts} ${deployment_group_opts} ${project_name_opts} ${deployment_group_name_opts} ${deployment_group_tags_opts}"
 
-    if $facts['os']['family'] == 'windows' {
-        exec {"${install_path}/${config_script} --unattended --url ${vsts_url} --auth ${auth_type} ${opts}":
+    if $facts['kernel'] == 'windows' {
+        exec {"${install_path}/${config_script}":
+            command => Sensitive.new("${install_path}/${config_script} --unattended --url ${vsts_url} --auth ${auth_type} ${opts}"),
             creates => "${install_path}/.credentials",
+            require => Archive["${install_path}/${archive_name}"],
         }
         # If this fails, it's likely that the initial installation failed
         if $manage_service {
             service {"vstsagent.${vsts_instance_name}.${agent_name}":
-                ensure => 'running',
+                ensure  => 'running',
+                require => Exec["${install_path}/${config_script}"],
             }
         }
     }
@@ -297,16 +307,19 @@ define vsts_agent::agent (
             command => Sensitive.new("${install_path}/${config_script} --unattended --url ${vsts_url} --auth ${auth_type} ${opts}"),
             creates => "${install_path}/.credentials",
             user    => $service_user,
+            require => Archive["${install_path}/${archive_name}"],
         }
         if $facts['kernel'] == 'Linux' and $run_as_service {
             exec {"${install_path}/svc.sh install ${service_user}":
                 creates => "/etc/systemd/system/vsts.agent.${vsts_instance_name}.${agent_name}.service",
                 user    => 'root',
                 cwd     => $install_path,
+                require => Exec["${install_path}/${config_script}"],
             }
             if $manage_service {
                 service {"vsts.agent.${vsts_instance_name}.${agent_name}.service":
-                    ensure => 'running',
+                    ensure  => 'running',
+                    require => Exec["${install_path}/svc.sh install ${service_user}"],
                 }
             }
         }
