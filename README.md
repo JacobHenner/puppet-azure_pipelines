@@ -58,6 +58,8 @@ This module has been tested on Windows Server 2016 and CentOS 7. It is not expec
 
 This module does not yet support upgrading VSTS agents, or changing the configuration of existing VSTS agents.
 
+On Windows, `install_path` must be specified using backslashes due to a limitation in the `dirtree` module.
+
 There are currently no automated tests for this module.
 
 ## Development

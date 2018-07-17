@@ -1,6 +1,6 @@
 {
   "name": "jacobhenner-vsts_agent",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "author": "jacobhenner",
   "summary": "Puppet module for managing Visual Studio Team Services (VSTS) agents",
   "license": "Apache-2.0",
@@ -19,6 +19,10 @@
     {
       "name": "AlexCline-dirtree",
       "version_requirement": ">=0.2.1"
+    },
+    {
+      "name": "puppetlabs-acl",
+      "version_requirement": ">=2.0.1"
     }
   ],
   "operatingsystem_support": [

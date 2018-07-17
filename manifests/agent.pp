@@ -80,6 +80,8 @@
 #   Name of script file used to install the VSTS agent.
 # @param manage_service
 #   If enabled and $run_as_service is true, ensure VSTS agent is running.
+# @param strict_windows_acl
+#   If enabled, the Windows ACL for install_path will not inherit parent permissions, and all unmanaged ACEs will be purged.
 define vsts_agent::agent (
     Stdlib::Absolutepath $install_path,
     String[1] $service_user,
@@ -116,6 +118,7 @@ define vsts_agent::agent (
     String[1] $archive_name = lookup('vsts_agent::agent::archive_name'),
     String[1] $config_script = lookup('vsts_agent::agent::config_script'),
     Boolean $manage_service = $run_as_service,
+    Boolean $strict_windows_acl = false,
 ) {
     if $facts['kernel'] != 'Linux' and $facts['kernel'] != 'windows' {
         fail('Unsupported operating system')
@@ -138,18 +141,30 @@ define vsts_agent::agent (
 
     $install_path_parent = $dirtree[-1]
 
-    file {$install_path:
-        ensure  => directory,
-        owner   => $service_user,
-        group   => $service_group,
-        mode    => '0750',
-        require => File[$install_path_parent],
-    }
-
     if $facts['kernel'] == 'windows' {
+
         if $run_as_service and $windows_logon_account and !$windows_logon_password {
             fail('windows_logon_password needs to be specified')
         }
+
+        file {$install_path:
+            ensure  => directory,
+            require => File[$install_path_parent],
+        }
+
+        acl {$install_path:
+            permissions                => [
+                { identity => 'Administrator', rights => ['full'], perm_type=> 'allow', child_types => 'all', affects => 'all' },
+                { identity => 'Administrators', rights => ['full'], perm_type=> 'allow', child_types => 'all', affects => 'all' },
+                { identity => $service_user, rights => ['full'], perm_type=> 'allow', child_types => 'all', affects => 'all' },
+            ],
+            owner                      => 'Administrators',
+            group                      => 'Administrators',
+            inherit_parent_permissions => !$strict_windows_acl,
+            purge                      => $strict_windows_acl,
+            require                    => File[$install_path],
+        }
+
         # Requires PowerShell >= 4 (alternative to depending on 7z)
         archive {"${install_path}/${archive_name}":
             ensure          => present,
@@ -166,6 +181,14 @@ define vsts_agent::agent (
         }
     }
     else {
+        file {$install_path:
+            ensure  => directory,
+            owner   => $service_user,
+            group   => $service_group,
+            mode    => '0750',
+            require => File[$install_path_parent],
+        }
+
         archive {"${install_path}/${archive_name}":
             ensure       => present,
             extract      => true,
