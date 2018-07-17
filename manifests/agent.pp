@@ -165,7 +165,7 @@ define vsts_agent::agent (
             require                    => File[$install_path],
         }
 
-        # Requires PowerShell >= 4 (alternative to depending on 7z)
+        # Requires PowerShell >= 5 (alternative to depending on 7z)
         archive {"${install_path}/${archive_name}":
             ensure          => present,
             extract         => true,
