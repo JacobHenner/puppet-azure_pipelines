@@ -152,19 +152,6 @@ define vsts_agent::agent (
             require => File[$install_path_parent],
         }
 
-        acl {$install_path:
-            permissions                => [
-                { identity => 'Administrator', rights => ['full'], perm_type=> 'allow', child_types => 'all', affects => 'all' },
-                { identity => 'Administrators', rights => ['full'], perm_type=> 'allow', child_types => 'all', affects => 'all' },
-                { identity => $service_user, rights => ['full'], perm_type=> 'allow', child_types => 'all', affects => 'all' },
-            ],
-            owner                      => 'Administrators',
-            group                      => 'Administrators',
-            inherit_parent_permissions => !$strict_windows_acl,
-            purge                      => $strict_windows_acl,
-            require                    => File[$install_path],
-        }
-
         # Requires PowerShell >= 5 (alternative to depending on 7z)
         archive {"${install_path}/${archive_name}":
             ensure          => present,
@@ -178,6 +165,19 @@ define vsts_agent::agent (
             user            => $service_user,
             group           => $service_group,
             require         => File[$install_path],
+        }
+
+        acl {$install_path:
+            permissions                => [
+                { identity => 'Administrator', rights => ['full'], perm_type=> 'allow', child_types => 'all', affects => 'all' },
+                { identity => 'Administrators', rights => ['full'], perm_type=> 'allow', child_types => 'all', affects => 'all' },
+                { identity => $service_user, rights => ['full'], perm_type=> 'allow', child_types => 'all', affects => 'all' },
+            ],
+            owner                      => 'Administrators',
+            group                      => 'Administrators',
+            inherit_parent_permissions => !$strict_windows_acl,
+            purge                      => $strict_windows_acl,
+            require                    => Archive["${install_path}/${archive_name}"],
         }
     }
     else {
