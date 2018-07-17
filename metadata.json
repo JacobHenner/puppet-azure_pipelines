@@ -1,6 +1,6 @@
 {
   "name": "jacobhenner-vsts_agent",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "author": "jacobhenner",
   "summary": "Puppet module for managing Visual Studio Team Services (VSTS) agents",
   "license": "Apache-2.0",
