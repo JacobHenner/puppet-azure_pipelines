@@ -11,7 +11,7 @@
 #  }
 #
 # @param install_path
-#   The installation path for the VSTS agent. 
+#   The installation path for the VSTS agent. Must use escaped backslashes on Windows.
 # @param service_user
 #   The user that will own the $install_path directory, and run the VSTS service if $run_as_service is true.
 # @param vsts_instance_name
@@ -81,7 +81,11 @@
 # @param manage_service
 #   If enabled and $run_as_service is true, ensure VSTS agent is running.
 # @param strict_windows_acl
-#   If enabled, the Windows ACL for install_path will not inherit parent permissions, and all unmanaged ACEs will be purged.
+#   If enabled, the Windows ACL for $install_path will not inherit parent permissions, and all unmanaged ACEs will be purged.
+# @param windows_acl_owner
+#   Owner for $install_path ACL.
+# @param windows_acl_permissions
+#   Sets the ACEs applied to the $install_path ACL on Windows. See the Puppet acl module fot details.
 define vsts_agent::agent (
     Stdlib::Absolutepath $install_path,
     String[1] $service_user,
@@ -119,6 +123,12 @@ define vsts_agent::agent (
     String[1] $config_script = lookup('vsts_agent::agent::config_script'),
     Boolean $manage_service = $run_as_service,
     Boolean $strict_windows_acl = false,
+    String[1] $windows_acl_owner = 'Administrators',
+    Array[Hash[String[1],Variant[String[1],Array[String[1]]]]] $windows_acl_permissions = [
+        { identity => 'Administrator', rights => ['full'], perm_type=> 'allow', child_types => 'all', affects => 'all' },
+        { identity => 'Administrators', rights => ['full'], perm_type=> 'allow', child_types => 'all', affects => 'all' },
+        { identity => $service_user, rights => ['full'], perm_type=> 'allow', child_types => 'all', affects => 'all' },
+    ],
 ) {
     if $facts['kernel'] != 'Linux' and $facts['kernel'] != 'windows' {
         fail('Unsupported operating system')
@@ -170,13 +180,8 @@ define vsts_agent::agent (
         }
 
         acl {$install_path:
-            permissions                => [
-                { identity => 'Administrator', rights => ['full'], perm_type=> 'allow', child_types => 'all', affects => 'all' },
-                { identity => 'Administrators', rights => ['full'], perm_type=> 'allow', child_types => 'all', affects => 'all' },
-                { identity => $service_user, rights => ['full'], perm_type=> 'allow', child_types => 'all', affects => 'all' },
-            ],
-            owner                      => 'Administrators',
-            group                      => 'Administrators',
+            permissions                => $windows_acl_permissions,
+            owner                      => $windows_acl_owner,
             inherit_parent_permissions => !$strict_windows_acl,
             purge                      => $strict_windows_acl,
             require                    => Archive["${install_path}/${archive_name}"],
