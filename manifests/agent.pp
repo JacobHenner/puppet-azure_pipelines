@@ -130,7 +130,7 @@ define vsts_agent::agent (
         { identity => $service_user, rights => ['full'], perm_type=> 'allow', child_types => 'all', affects => 'all' },
     ],
 ) {
-    if $facts['kernel'] != 'Linux' and $facts['kernel'] != 'windows' {
+    if $facts['kernel'] != 'Linux' and $facts['kernel'] != 'windows' and $facts['kernel'] != 'Darwin' {
         fail('Unsupported operating system')
     }
     if $deployment_group and !($deployment_group_name and $project_name){
@@ -352,6 +352,26 @@ define vsts_agent::agent (
                 service {"vsts.agent.${vsts_instance_name}.${agent_name}.service":
                     ensure  => 'running',
                     require => Exec["${install_path}/svc.sh install ${service_user}"],
+                }
+            }
+        }
+        if $facts['kernel'] == 'Darwin' and $run_as_service {
+            file { "/Users/${service_user}/Library/LaunchAgents" :
+                ensure => directory,
+                owner  => $service_user,
+            }
+            exec {"${install_path}/svc.sh install":
+                environment => ["HOME=/Users/${service_user}"],
+                creates     => "${install_path}/.service",
+                user        => $service_user,
+                cwd         => $install_path,
+                require     => [Exec["${install_path}/${config_script}"], File["/Users/${service_user}/Library/LaunchAgents"]],
+            }
+            if $manage_service {
+                exec { "Service: vsts.agent.${vsts_instance_name}.${agent_name}.plist" :
+                    command => "/bin/launchctl bootstrap gui/`id -u ${service_user}` /Users/${service_user}/Library/LaunchAgents/vsts.agent.${vsts_instance_name}.${agent_name}.plist",
+                    unless  => "/bin/launchctl print gui/`id -u ${service_user}`/vsts.agent.${vsts_instance_name}.${agent_name}",
+                    require => Exec["${install_path}/svc.sh install"]
                 }
             }
         }
