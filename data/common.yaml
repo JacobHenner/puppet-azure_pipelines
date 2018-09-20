@@ -1,5 +1,5 @@
 ---
-vsts_agent::agent::package_src: 'https://vstsagentpackage.azureedge.net/agent/2.134.2/vsts-agent-linux-x64-2.134.2.tar.gz'
-vsts_agent::agent::package_sha512: '0ea44e68d22d26b7c4ce43f1baa1c640a18ac02ad0e07417199f3e7f3439a5e513745abbf9b4398daf6f4a6b8de0c6bf240c342da9daa5e303c1e0fe67db8ce0'
+vsts_agent::agent::package_src: 'https://vstsagentpackage.azureedge.net/agent/2.140.0/vsts-agent-linux-x64-2.140.0.tar.gz'
+vsts_agent::agent::package_sha512: 'f35e9f14c4034ec639e332764cea62ecbcef0d3bebafe2e08cbd760412a994aa1abac10a1cb351ada7b2d8a38e27f2addc63ce71b2f8595d91cb0b3683dbf57b'
 vsts_agent::agent::archive_name: 'agent.tar.gz'
 vsts_agent::agent::config_script: 'config.sh'
