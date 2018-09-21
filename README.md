@@ -13,7 +13,7 @@
 
 ## Description
 
-This module manages the installation of agents for Microsoft's [Visual Studio Team Services (VSTS)](https://www.visualstudio.com/team-services/). Both standard agents and deployment group agents are supported. 
+This module manages the installation of agents for Microsoft's [Visual Studio Team Services (VSTS)](https://www.visualstudio.com/team-services/), now called Azure Pipelines. Both standard agents and deployment group agents are supported.
 
 At this time, only agent installation is handled. Configuration changes (e.g. adding a deployment group tag, removing an agent) are not supported.
 
@@ -54,11 +54,13 @@ Please see the parameter documentation in [agent.pp](manifests/agent.pp) or gene
 
 ## Limitations
 
-This module has been tested on Windows Server 2016 and CentOS 7. It is not expected to work on Mac OS, or other systems.
+This module has been tested on Windows Server 2016, CentOS 7, and macOS Sierra. It is not expected to work on other systems.
 
 This module does not yet support upgrading VSTS agents, or changing the configuration of existing VSTS agents.
 
 On Windows, `install_path` must be specified using backslashes due to a limitation in the `dirtree` module.
+
+Agents for Azure Pipelines can be configured by overriding some parameter defaults. Full support will be provided in a future release.
 
 There are currently no automated tests for this module.
 
