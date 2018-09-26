@@ -1,27 +1,27 @@
-# @summary Installs the Microsoft Visual Studio Team Services (VSTS) agent.
+# @summary Installs the Azure Pipelines (VSTS, TFS) agent.
 #
 # @example
-#  vsts_agent::agent { 'testagent':
-#      install_path       => '/opt/vsts_agent/testagent',
+#  azure_pipelines::agent { 'testagent':
+#      install_path       => '/opt/azure_pipelines/testagent',
 #      token              => 'pat-token',
-#      vsts_instance_name => 'instance-name',
+#      instance_name      => 'instance-name',
 #      service_user       => 'vsts',
 #      service_group      => 'vsts',
 #      run_as_service     => true,
 #  }
 #
 # @param install_path
-#   The installation path for the VSTS agent. Must use escaped backslashes on Windows.
+#   The installation path for the agent. Must use escaped backslashes on Windows.
 # @param service_user
-#   The user that will own the $install_path directory, and run the VSTS service if $run_as_service is true.
-# @param vsts_instance_name
-#   The name of the VSTS account.
+#   The user that will own the $install_path directory, and run the agent service if $run_as_service is true.
+# @param instance_name
+#   The name of the Azure Pipelines or VSTS account.
 # @param agent_name
-#   Unique name to identify the VSTS agent
+#   Unique name to identify the agent
 # @param package_src 
-#   Source of the VSTS installation package. Supports all URIs supported by the archive module.
+#   Source of the agent installation package. Supports all URIs supported by the archive module.
 # @param package_sha512
-#   SHA-512 hash of the VSTS installation package, for verification.
+#   SHA-512 hash of the installation package, for verification.
 # @param service_group
 #   The group that will own the $install_path directory.
 # @param proxy_proto
@@ -36,8 +36,11 @@
 #   The password for a proxy, if needed.
 # @param proxy_bypass_hosts
 #   Hostname regexes to bypass proxy.
-# @param vsts_url
-#   The URL for VSTS or TFS. If using VSTS, setting $vsts_instance_name is sufficient.
+# @param vsts
+#   If enabled, agent will connect to VSTS URLs instead of Azure Pipelines URLs.
+#   This is generally only necessary if dev.azure.com URLs are blocked.
+# @param instance_url
+#   The URL for Azure Pipelines, VSTS, or TFS. If using Azure Pipelines or VSTS, setting $instance_name is sufficient.
 # @param auth_type
 #   The auth type to use.
 # @param token
@@ -61,7 +64,7 @@
 # @param windows_logon_account
 #   Specify the Windows user running the service, if different than $service_user.
 # @param windows_logon_password
-#   Specify the password for the Windows user running the VSTS service.
+#   Specify the password for the Windows user running the agent service.
 # @param overwrite_auto_logon
 #   Overwrite any existing auto logon on the machine.
 # @param no_restart
@@ -75,24 +78,24 @@
 # @param deployment_group_tags
 #   Tags for a deployment group agent.
 # @param archive_name
-#   Destination filename for VSTS installation package. 
+#   Destination filename for agent installation package. 
 # @param config_script
-#   Name of script file used to install the VSTS agent.
+#   Name of script file used to install the agent.
 # @param manage_service
-#   If enabled and $run_as_service is true, ensure VSTS agent is running.
+#   If enabled and $run_as_service is true, ensure agent is running.
 # @param strict_windows_acl
 #   If enabled, the Windows ACL for $install_path will not inherit parent permissions, and all unmanaged ACEs will be purged.
 # @param windows_acl_owner
 #   Owner for $install_path ACL.
 # @param windows_acl_permissions
 #   Sets the ACEs applied to the $install_path ACL on Windows. See the Puppet acl module fot details.
-define vsts_agent::agent (
+define azure_pipelines::agent (
     Stdlib::Absolutepath $install_path,
     String[1] $service_user,
-    String[1] $vsts_instance_name,
+    String[1] $instance_name,
     String[1] $agent_name = $title,
-    String[1] $package_src = lookup('vsts_agent::agent::package_src'),
-    String[128,128] $package_sha512 = lookup('vsts_agent::agent::package_sha512'),
+    String[1] $package_src = lookup('azure_pipelines::agent::package_src'),
+    String[128,128] $package_sha512 = lookup('azure_pipelines::agent::package_sha512'),
     Optional[String[1]] $service_group = undef,
     Optional[Enum['http','https']] $proxy_proto = undef,
     Optional[Stdlib::Host] $proxy_host = undef,
@@ -100,7 +103,8 @@ define vsts_agent::agent (
     Optional[String[1]] $proxy_user = undef,
     Optional[String[1]] $proxy_password = undef,
     Optional[Array[String[1]]] $proxy_bypass_hosts = undef,
-    Stdlib::HTTPUrl $vsts_url = "https://${vsts_instance_name}.visualstudio.com",
+    Boolean $vsts = false,
+    Optional[Stdlib::HTTPUrl] $instance_url = undef,
     Enum['pat', 'negotiate','alt','integrated'] $auth_type = 'pat',
     Optional[String[1]] $token = undef,
     Optional[String[1]] $username = undef,
@@ -119,8 +123,8 @@ define vsts_agent::agent (
     Optional[String[1]] $project_name = undef,
     Optional[String[1]] $deployment_group_name = undef,
     Optional[Array[String[1],1]] $deployment_group_tags = undef,
-    String[1] $archive_name = lookup('vsts_agent::agent::archive_name'),
-    String[1] $config_script = lookup('vsts_agent::agent::config_script'),
+    String[1] $archive_name = lookup('azure_pipelines::agent::archive_name'),
+    String[1] $config_script = lookup('azure_pipelines::agent::config_script'),
     Boolean $manage_service = $run_as_service,
     Boolean $strict_windows_acl = false,
     String[1] $windows_acl_owner = 'Administrators',
@@ -130,6 +134,17 @@ define vsts_agent::agent (
         { identity => $service_user, rights => ['full'], perm_type=> 'allow', child_types => 'all', affects => 'all' },
     ],
 ) {
+    if $instance_url == undef {
+        if $vsts {
+            $_instance_url = "https://${instance_name}.visualstudio.com"
+        }
+        else {
+            $_instance_url = "https://dev.azure.com/${instance_name}/"
+        }
+    }
+    else {
+        $_instance_url = $instance_url
+    }
     if $facts['kernel'] != 'Linux' and $facts['kernel'] != 'windows' and $facts['kernel'] != 'Darwin' {
         fail('Unsupported operating system')
     }
@@ -210,7 +225,7 @@ define vsts_agent::agent (
         }
     }
 
-    # The VSTS credential store is not supported due to security concerns
+    # The agent credential store is not supported due to security concerns
     # See https://github.com/Microsoft/vsts-agent/issues/1542 for additional info
     # Consider using cntlm on Linux (https://forge.puppet.com/jacobhenner/cntlm)
 
@@ -320,13 +335,13 @@ define vsts_agent::agent (
 
     if $facts['kernel'] == 'windows' {
         exec {"${install_path}/${config_script}":
-            command => Sensitive.new("${install_path}/${config_script} --unattended --url ${vsts_url} --auth ${auth_type} ${opts}"),
+            command => Sensitive.new("${install_path}/${config_script} --unattended --url ${_instance_url} --auth ${auth_type} ${opts}"),
             creates => "${install_path}/.credentials",
             require => Archive["${install_path}/${archive_name}"],
         }
         # If this fails, it's likely that the initial installation failed
         if $manage_service {
-            service {"vstsagent.${vsts_instance_name}.${agent_name}":
+            service {"vstsagent.${instance_name}.${agent_name}":
                 ensure  => 'running',
                 require => Exec["${install_path}/${config_script}"],
             }
@@ -334,20 +349,20 @@ define vsts_agent::agent (
     }
     else {
         exec {"${install_path}/${config_script}":
-            command => Sensitive.new("${install_path}/${config_script} --unattended --url ${vsts_url} --auth ${auth_type} ${opts}"),
+            command => Sensitive.new("${install_path}/${config_script} --unattended --url ${_instance_url} --auth ${auth_type} ${opts}"),
             creates => "${install_path}/.credentials",
             user    => $service_user,
             require => Archive["${install_path}/${archive_name}"],
         }
         if $facts['kernel'] == 'Linux' and $run_as_service {
             exec {"${install_path}/svc.sh install ${service_user}":
-                creates => "/etc/systemd/system/vsts.agent.${vsts_instance_name}.${agent_name}.service",
+                creates => "/etc/systemd/system/vsts.agent.${instance_name}.${agent_name}.service",
                 user    => 'root',
                 cwd     => $install_path,
                 require => Exec["${install_path}/${config_script}"],
             }
             if $manage_service {
-                service {"vsts.agent.${vsts_instance_name}.${agent_name}.service":
+                service {"vsts.agent.${instance_name}.${agent_name}.service":
                     ensure  => 'running',
                     require => Exec["${install_path}/svc.sh install ${service_user}"],
                 }
@@ -366,9 +381,9 @@ define vsts_agent::agent (
                 require     => [Exec["${install_path}/${config_script}"], File["/Users/${service_user}/Library/LaunchAgents"]],
             }
             if $manage_service {
-                exec { "Service: vsts.agent.${vsts_instance_name}.${agent_name}.plist" :
-                    command => "/bin/launchctl bootstrap gui/`id -u ${service_user}` /Users/${service_user}/Library/LaunchAgents/vsts.agent.${vsts_instance_name}.${agent_name}.plist",
-                    unless  => "/bin/launchctl print gui/`id -u ${service_user}`/vsts.agent.${vsts_instance_name}.${agent_name}",
+                exec { "Service: vsts.agent.${instance_name}.${agent_name}.plist" :
+                    command => "/bin/launchctl bootstrap gui/`id -u ${service_user}` /Users/${service_user}/Library/LaunchAgents/vsts.agent.${instance_name}.${agent_name}.plist",
+                    unless  => "/bin/launchctl print gui/`id -u ${service_user}`/vsts.agent.${instance_name}.${agent_name}",
                     require => Exec["${install_path}/svc.sh install"]
                 }
             }

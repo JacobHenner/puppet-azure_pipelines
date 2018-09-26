@@ -1,12 +1,12 @@
 {
-  "name": "jacobhenner-vsts_agent",
-  "version": "0.3.0",
+  "name": "jacobhenner-azure_pipelines",
+  "version": "1.0.0",
   "author": "jacobhenner",
-  "summary": "Puppet module for managing Visual Studio Team Services (VSTS) agents",
+  "summary": "Puppet module for managing Azure Pipelines (VSTS, TFS) agents",
   "license": "Apache-2.0",
-  "source": "https://github.com/JacobHenner/vsts_agent/",
-  "project_page": "https://github.com/JacobHenner/vsts_agent/",
-  "issues_url": "https://github.com/JacobHenner/vsts_agent/issues",
+  "source": "https://github.com/JacobHenner/puppet-azure_pipelines",
+  "project_page": "https://github.com/JacobHenner/puppet-azure_pipelines",
+  "issues_url": "https://github.com/JacobHenner/puppet-azure_pipelines/issues",
   "dependencies": [
     {
       "name": "puppetlabs-stdlib",

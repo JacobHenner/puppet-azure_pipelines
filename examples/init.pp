@@ -9,11 +9,11 @@
 # Learn more about module testing here:
 # https://docs.puppet.com/guides/tests_smoke.html
 
-vsts_agent::agent { 'testagent':
-    install_path       => '/opt/vsts_agent/testagent',
-    token              => 'pat-token',
-    vsts_instance_name => 'instance-name',
-    service_user       => 'vsts',
-    service_group      => 'vsts',
-    run_as_service     => true,
+azure_pipelines::agent { 'testagent':
+    install_path   => '/opt/azure_pipelines/testagent',
+    token          => 'pat-token',
+    instance_name  => 'instance-name',
+    service_user   => 'vsts',
+    service_group  => 'vsts',
+    run_as_service => true,
 }

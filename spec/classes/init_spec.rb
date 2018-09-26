@@ -1,6 +1,6 @@
 require 'spec_helper'
-describe 'vsts_agent' do
+describe 'azure_pipelines' do
   context 'with default values for all parameters' do
-    it { should contain_class('vsts_agent') }
+    it { should contain_class('azure_pipelines') }
   end
 end
