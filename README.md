@@ -23,7 +23,7 @@ At this time, only agent installation is handled. Configuration changes (e.g. ad
 
 All dependencies for the VSTS agent must be installed prior to using this module.
 
-On Windows, PowerShell >= 5 is required.
+On Windows, the System.IO.Compression.FileSystem .NET assembly must be available.
 
 If you are unable to download packages from the internet (either directly or through a proxy), you will need a locally accessible copy of the agent.
 
