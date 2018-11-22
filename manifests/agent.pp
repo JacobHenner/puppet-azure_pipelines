@@ -162,21 +162,19 @@ define vsts_agent::agent (
             require => File[$install_path_parent],
         }
 
-        # Requires PowerShell >= 5 (alternative to depending on 7z)
         archive {"${install_path}/${archive_name}":
-            ensure          => present,
-            extract         => true,
-            extract_path    => $install_path,
-            extract_command => "PowerShell -Command \"Expand-Archive -Path %s -DestinationPath ${install_path}\"",
-            source          => $package_src,
-            checksum        => $package_sha512,
-            checksum_type   => 'sha512',
-            creates         => "${install_path}/${config_script}",
-            proxy_type      => $proxy_type,
-            proxy_server    => $proxy_server,
-            user            => $service_user,
-            group           => $service_group,
-            require         => File[$install_path],
+            ensure        => present,
+            extract       => true,
+            extract_path  => $install_path,
+            source        => $package_src,
+            checksum      => $package_sha512,
+            checksum_type => 'sha512',
+            creates       => "${install_path}/${config_script}",
+            proxy_type    => $proxy_type,
+            proxy_server  => $proxy_server,
+            user          => $service_user,
+            group         => $service_group,
+            require       => File[$install_path],
         }
 
         acl {$install_path:
