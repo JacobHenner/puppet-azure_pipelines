@@ -343,6 +343,7 @@ define azure_pipelines::agent (
         if $manage_service {
             service {"vstsagent.${instance_name}.${agent_name}":
                 ensure  => 'running',
+                enable  => true,
                 require => Exec["${install_path}/${config_script}"],
             }
         }
