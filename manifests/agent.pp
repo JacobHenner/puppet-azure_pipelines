@@ -362,9 +362,9 @@ define azure_pipelines::agent (
                 require => Exec["${install_path}/${config_script}"],
             }
             if $manage_service {
-                $escaped_dashes_in_service_name = regsubst("vsts.agent.${instance_name}.${agent_name}.service", '-', '\x2d')
-                $escaped_spaces_in_service_name = regsubst("vsts.agent.${instance_name}.${agent_name}.service", ' ', '\x20')
-                $escaped_slashes_in_service_name = regsubst("vsts.agent.${instance_name}.${agent_name}.service", '/', '-')
+                $escaped_dashes_in_service_name = regsubst("vsts.agent.${instance_name}.${agent_name}.service", '-', '\x2d', 'G')
+                $escaped_spaces_in_service_name = regsubst("vsts.agent.${instance_name}.${agent_name}.service", ' ', '\x20', 'G')
+                $escaped_slashes_in_service_name = regsubst("vsts.agent.${instance_name}.${agent_name}.service", '/', '-', 'G')
                 $escaped_service_name = $escaped_slashes_in_service_name
                 service { $escaped_service_name:
                     ensure  => 'running',
