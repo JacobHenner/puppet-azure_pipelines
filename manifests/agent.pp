@@ -363,8 +363,8 @@ define azure_pipelines::agent (
             }
             if $manage_service {
                 $escaped_dashes_in_service_name = regsubst("vsts.agent.${instance_name}.${agent_name}.service", '-', '\x2d', 'G')
-                $escaped_spaces_in_service_name = regsubst("vsts.agent.${instance_name}.${agent_name}.service", ' ', '\x20', 'G')
-                $escaped_slashes_in_service_name = regsubst("vsts.agent.${instance_name}.${agent_name}.service", '/', '-', 'G')
+                $escaped_spaces_in_service_name = regsubst($escaped_dashes_in_service_name, ' ', '\x20', 'G')
+                $escaped_slashes_in_service_name = regsubst($escaped_spaces_in_service_name, '/', '-', 'G')
                 $escaped_service_name = $escaped_slashes_in_service_name
                 service { $escaped_service_name:
                     ensure  => 'running',
