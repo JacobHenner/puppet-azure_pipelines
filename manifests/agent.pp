@@ -2,12 +2,13 @@
 #
 # @example
 #  azure_pipelines::agent { 'testagent':
-#      install_path       => '/opt/azure_pipelines/testagent',
-#      token              => 'pat-token',
-#      instance_name      => 'instance-name',
-#      service_user       => 'vsts',
-#      service_group      => 'vsts',
-#      run_as_service     => true,
+#      install_path         => '/opt/azure_pipelines/testagent',
+#      token                => 'pat-token',
+#      instance_name        => 'instance-name',
+#      service_user         => 'vsts',
+#      service_group        => 'vsts',
+#      run_as_service       => true,
+#      service_startup_type => 'true',
 #  }
 #
 # @param install_path
@@ -59,6 +60,8 @@
 #   Accept the TEE end user license agreement.
 # @param run_as_service
 #   Configure the agent to run as a service.
+# @param service_startup_type
+#   Configure the startup type for the service (see https://puppet.com/docs/puppet/latest/types/service.html#service-attribute-enable)
 # @param run_as_auto_logon
 #   Configure auto logon and run the agent on startup.
 # @param windows_logon_account
@@ -114,6 +117,7 @@ define azure_pipelines::agent (
     Optional[String[1]] $work = undef,
     Boolean $accept_tee_eula = false,
     Boolean $run_as_service = false,
+    Optional[String[1]] $service_startup_type = 'automatic',
     Boolean $run_as_auto_logon = false,
     Optional[String[1]] $windows_logon_account = $service_user,
     Optional[String[1]] $windows_logon_password = undef,
@@ -343,7 +347,7 @@ define azure_pipelines::agent (
         if $manage_service {
             service {"vstsagent.${instance_name}.${agent_name}":
                 ensure  => 'running',
-                enable  => true,
+                enable  => $service_startup_type,
                 require => Exec["${install_path}/${config_script}"],
             }
         }
@@ -365,6 +369,7 @@ define azure_pipelines::agent (
             if $manage_service {
                 service {"vsts.agent.${instance_name}.${agent_name}.service":
                     ensure  => 'running',
+                    enable  => $service_startup_type,
                     require => Exec["${install_path}/svc.sh install ${service_user}"],
                 }
             }
