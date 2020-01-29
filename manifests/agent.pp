@@ -117,7 +117,7 @@ define azure_pipelines::agent (
     Optional[String[1]] $work = undef,
     Boolean $accept_tee_eula = false,
     Boolean $run_as_service = false,
-    Optional[String[1]] $service_startup_type = 'automatic',
+    Optional[String[1]] $service_startup_type = 'true',
     Boolean $run_as_auto_logon = false,
     Optional[String[1]] $windows_logon_account = $service_user,
     Optional[String[1]] $windows_logon_password = undef,
