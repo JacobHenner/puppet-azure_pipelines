@@ -1,5 +1,5 @@
 ---
-azure_pipelines::agent::package_src: 'https://vstsagentpackage.azureedge.net/agent/2.144.0/vsts-agent-win-x64-2.144.0.zip'
-azure_pipelines::agent::package_sha512: '0c93c0c49167deb50f526c3c899abe95d764336278e960fd9a14048516d513821a60c9219a2427f166e221f9818db4df6533ffeb952897f7f7880c629792bc53'
+azure_pipelines::agent::package_src: 'https://vstsagentpackage.azureedge.net/agent/2.163.1/vsts-agent-win-x64-2.163.1.zip'
+azure_pipelines::agent::package_sha512: '0707463c1211e705fb35d59f03c65e9258951c54b1aef25c99a1ccceb93e410ed02e1a2db486c235723eb6ebb92484ed1e2666efe381bc66ce40247b71613f03'
 azure_pipelines::agent::archive_name: 'agent.zip'
 azure_pipelines::agent::config_script: 'config.cmd'
