@@ -152,6 +152,14 @@ define azure_pipelines::agent (
         fail('Deployment group name and project name must be set if deployment group mode is enabled')
     }
 
+    if ($facts['kernel'] == 'Linux' and $run_as_service) {
+        # If these contain dashes (and possibly other chars), svc.sh will systemd-escape them to backslashes
+        # and the actual resulting service unit name will not match what this class expects.
+        validate_re($instance_name, '^[^-]*$', "instance_name cannot contain dashes")
+        validate_re($pool, '^[^-]*$', "pool cannot contain dashes")
+        validate_re($agent_name, '^[^-]*$', "agent_name cannot contain dashes")
+    }
+
     $proxy_server = $proxy_host ? {
         undef   => undef,
         default => "${proxy_proto}://${proxy_user}:${proxy_password}@${proxy_host}:${proxy_port}"
@@ -356,13 +364,13 @@ define azure_pipelines::agent (
         }
         if $facts['kernel'] == 'Linux' and $run_as_service {
             exec {"${install_path}/svc.sh install ${service_user}":
-                creates => "/etc/systemd/system/vsts.agent.${instance_name}.${agent_name}.service",
+                creates => "/etc/systemd/system/vsts.agent.${instance_name}.${pool}.${agent_name}.service",
                 user    => 'root',
                 cwd     => $install_path,
                 require => Exec["${install_path}/${config_script}"],
             }
             if $manage_service {
-                service {"vsts.agent.${instance_name}.${agent_name}.service":
+                service {"vsts.agent.${instance_name}.${pool}.${agent_name}.service":
                     ensure  => 'running',
                     require => Exec["${install_path}/svc.sh install ${service_user}"],
                 }
