@@ -152,10 +152,26 @@ define azure_pipelines::agent (
         fail('Deployment group name and project name must be set if deployment group mode is enabled')
     }
 
+    $proxy_proto_ = $proxy_proto ? {
+        undef   => undef,
+        default => "${proxy_proto}://",
+    }
+
+    $proxy_password_ = $proxy_password ? {
+        undef   => undef,
+        default => ":$proxy_password",
+    }
+
+    $proxy_nonce = $proxy_user ? {
+        undef   => undef,
+        default => "$proxy_user$proxy_password@",
+    }
+
     $proxy_server = $proxy_host ? {
         undef   => undef,
-        default => "${proxy_proto}://${proxy_user}:${proxy_password}@${proxy_host}:${proxy_port}"
+        default => "${proxy_proto_}${proxy_nonce}${proxy_host}:${proxy_port}"
     }
+
     $proxy_type = $proxy_proto ? {
         undef   => 'none',
         default => $proxy_proto,
