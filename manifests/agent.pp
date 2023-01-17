@@ -18,7 +18,7 @@
 #   The name of the Azure Pipelines or VSTS account.
 # @param agent_name
 #   Unique name to identify the agent
-# @param package_src 
+# @param package_src
 #   Source of the agent installation package. Supports all URIs supported by the archive module.
 # @param package_sha512
 #   SHA-512 hash of the installation package, for verification.
@@ -78,7 +78,7 @@
 # @param deployment_group_tags
 #   Tags for a deployment group agent.
 # @param archive_name
-#   Destination filename for agent installation package. 
+#   Destination filename for agent installation package.
 # @param config_script
 #   Name of script file used to install the agent.
 # @param manage_service
@@ -395,9 +395,9 @@ define azure_pipelines::agent (
                 require     => [Exec["${install_path}/${config_script}"], File["/Users/${service_user}/Library/LaunchAgents"]],
             }
             if $manage_service {
-                exec { "Service: vsts.agent.${instance_name}.${agent_name}.plist" :
-                    command => "/bin/launchctl bootstrap gui/`id -u ${service_user}` /Users/${service_user}/Library/LaunchAgents/vsts.agent.${instance_name}.${agent_name}.plist",
-                    unless  => "/bin/launchctl print gui/`id -u ${service_user}`/vsts.agent.${instance_name}.${agent_name}",
+                exec { "Service: vsts.agent.${instance_name}.${pool}.${agent_name}.plist" :
+                    command => "/bin/launchctl bootstrap gui/`id -u ${service_user}` /Users/${service_user}/Library/LaunchAgents/vsts.agent.${instance_name}.${pool}.${agent_name}.plist",
+                    unless  => "/bin/launchctl print gui/`id -u ${service_user}`/vsts.agent.${instance_name}.${pool}.${agent_name}",
                     require => Exec["${install_path}/svc.sh install"]
                 }
             }
