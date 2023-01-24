@@ -18,7 +18,7 @@
 #   The name of the Azure Pipelines or VSTS account.
 # @param agent_name
 #   Unique name to identify the agent
-# @param package_src 
+# @param package_src
 #   Source of the agent installation package. Supports all URIs supported by the archive module.
 # @param package_sha512
 #   SHA-512 hash of the installation package, for verification.
@@ -78,7 +78,7 @@
 # @param deployment_group_tags
 #   Tags for a deployment group agent.
 # @param archive_name
-#   Destination filename for agent installation package. 
+#   Destination filename for agent installation package.
 # @param config_script
 #   Name of script file used to install the agent.
 # @param manage_service
@@ -133,6 +133,7 @@ define azure_pipelines::agent (
         { identity => 'Administrators', rights => ['full'], perm_type=> 'allow', child_types => 'all', affects => 'all' },
         { identity => $service_user, rights => ['full'], perm_type=> 'allow', child_types => 'all', affects => 'all' },
     ],
+    Boolean $use_sensitive = true,
 ) {
     if $instance_url == undef {
         if $vsts {
@@ -334,8 +335,14 @@ define azure_pipelines::agent (
     $opts = "${token_opts} ${username_opts} ${password_opts} ${pool_opts} ${replace_opts} ${agent_name_opts} ${work_opts} ${accept_tee_eula_opts} ${run_as_service_opts} ${run_as_auto_logon_opts} ${windows_logon_account_opts} ${windows_logon_password_opts} ${overwrite_auto_logon_opts} ${no_restart_opts} ${deployment_group_opts} ${project_name_opts} ${deployment_group_name_opts} ${deployment_group_tags_opts}"
 
     if $facts['kernel'] == 'windows' {
+        $config_base_command = "${install_path}/${config_script} --unattended --url ${_instance_url} --auth ${auth_type} ${opts}"
+        $config_command = $use_sensitive ? {
+          false   => $config_base_command,
+          default => Sensitive.new($config_base_command),
+        }
+      
         exec {"${install_path}/${config_script}":
-            command => Sensitive.new("${install_path}/${config_script} --unattended --url ${_instance_url} --auth ${auth_type} ${opts}"),
+            command => $config_command,
             creates => "${install_path}/.credentials",
             require => Archive["${install_path}/${archive_name}"],
         }
@@ -348,21 +355,28 @@ define azure_pipelines::agent (
         }
     }
     else {
+        $config_base_command = "${install_path}/${config_script} --unattended --url ${_instance_url} --auth ${auth_type} ${opts}"
+        $config_command = $use_sensitive ? {
+          false   => $config_base_command,
+          default => Sensitive.new($config_base_command),
+        }
+        
         exec {"${install_path}/${config_script}":
-            command => Sensitive.new("${install_path}/${config_script} --unattended --url ${_instance_url} --auth ${auth_type} ${opts}"),
+            command => $config_command,
             creates => "${install_path}/.credentials",
             user    => $service_user,
             require => Archive["${install_path}/${archive_name}"],
         }
         if $facts['kernel'] == 'Linux' and $run_as_service {
+            $servicename = "vsts.agent.${instance_name}.${pool}.${agent_name}.service"
             exec {"${install_path}/svc.sh install ${service_user}":
-                creates => "/etc/systemd/system/vsts.agent.${instance_name}.${agent_name}.service",
+                creates => "/etc/systemd/system/${servicename}",
                 user    => 'root',
                 cwd     => $install_path,
                 require => Exec["${install_path}/${config_script}"],
             }
             if $manage_service {
-                service {"vsts.agent.${instance_name}.${agent_name}.service":
+                service {$servicename:
                     ensure  => 'running',
                     require => Exec["${install_path}/svc.sh install ${service_user}"],
                 }
@@ -381,9 +395,9 @@ define azure_pipelines::agent (
                 require     => [Exec["${install_path}/${config_script}"], File["/Users/${service_user}/Library/LaunchAgents"]],
             }
             if $manage_service {
-                exec { "Service: vsts.agent.${instance_name}.${agent_name}.plist" :
-                    command => "/bin/launchctl bootstrap gui/`id -u ${service_user}` /Users/${service_user}/Library/LaunchAgents/vsts.agent.${instance_name}.${agent_name}.plist",
-                    unless  => "/bin/launchctl print gui/`id -u ${service_user}`/vsts.agent.${instance_name}.${agent_name}",
+                exec { "Service: vsts.agent.${instance_name}.${pool}.${agent_name}.plist" :
+                    command => "/bin/launchctl bootstrap gui/`id -u ${service_user}` /Users/${service_user}/Library/LaunchAgents/vsts.agent.${instance_name}.${pool}.${agent_name}.plist",
+                    unless  => "/bin/launchctl print gui/`id -u ${service_user}`/vsts.agent.${instance_name}.${pool}.${agent_name}",
                     require => Exec["${install_path}/svc.sh install"]
                 }
             }
