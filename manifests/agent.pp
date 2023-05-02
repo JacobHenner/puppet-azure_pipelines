@@ -371,14 +371,15 @@ define azure_pipelines::agent (
             require => Archive["${install_path}/${archive_name}"],
         }
         if $facts['kernel'] == 'Linux' and $run_as_service {
+            $svc_name =  join (["vsts.agent.${instance_name}.${pool}.${agent_name}"[0,72] , ".service"])
             exec {"${install_path}/svc.sh install ${service_user}":
-                creates => "/etc/systemd/system/vsts.agent.${instance_name}.${agent_name}.service",
+                creates => "/etc/systemd/system/$svc_name",
                 user    => 'root',
                 cwd     => $install_path,
                 require => Exec["${install_path}/${config_script}"],
             }
             if $manage_service {
-                service {"vsts.agent.${instance_name}.${agent_name}.service":
+                service {"$svc_name":
                     ensure  => 'running',
                     require => Exec["${install_path}/svc.sh install ${service_user}"],
                 }
