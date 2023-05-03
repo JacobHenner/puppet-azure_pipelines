@@ -371,7 +371,8 @@ define azure_pipelines::agent (
             require => Archive["${install_path}/${archive_name}"],
         }
         if $facts['kernel'] == 'Linux' and $run_as_service {
-            $svc_name =  join (["vsts.agent.${instance_name}.${pool}.${agent_name}"[0,72] , ".service"])
+            # service name is cut to 80 chars including the ".service" and dashes are replaced by \x2d for some reason
+            $svc_name = regsubst ( join (["vsts.agent.${instance_name}.${pool}.${agent_name}"[0,72] , ".service"]), '-', '\x2d')
             exec {"${install_path}/svc.sh install ${service_user}":
                 creates => "/etc/systemd/system/$svc_name",
                 user    => 'root',
