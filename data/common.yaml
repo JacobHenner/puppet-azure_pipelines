@@ -1,5 +1,5 @@
 ---
-azure_pipelines::agent::package_src: 'https://vstsagentpackage.azureedge.net/agent/2.144.0/vsts-agent-linux-x64-2.144.0.tar.gz'
-azure_pipelines::agent::package_sha512: 'a0064b23bca664112debb08bbf9cbb0f394c66931c7c3fdc7f21d0c9ceb51cf1db75c74f1e5fe5ae454d2df1e035d878c35a4cf7139b9f2a0a80a70a98fa8f5b'
+azure_pipelines::agent::package_src: 'https://vstsagentpackage.azureedge.net/agent/3.220.0/vsts-agent-linux-x64-3.220.0.tar.gz'
+azure_pipelines::agent::package_sha512: 'c9b06a77a426f3e00442737541d29494b093c3e595548eba412947f5e960cd7151db1992589e44706173098d6527fca590e734c6974b515d9dd6acf772142665'
 azure_pipelines::agent::archive_name: 'agent.tar.gz'
 azure_pipelines::agent::config_script: 'config.sh'
